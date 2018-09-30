@@ -85,19 +85,6 @@ namespace randr_util {
       return monitors;
     }
 
-#if WITH_XRANDR_MONITORS
-    if (check_monitor_support()) {
-      for (auto&& mon : conn.get_monitors(root, true).monitors()) {
-        try {
-          auto name = conn.get_atom_name(mon.name).name();
-          monitors.emplace_back(make_monitor(XCB_NONE, move(name), mon.width, mon.height, mon.x, mon.y));
-        } catch (const exception&) {
-          // silently ignore output
-        }
-      }
-    }
-#endif
-
     for (auto&& output : conn.get_screen_resources(root).outputs()) {
       try {
         auto info = conn.get_output_info(output);
@@ -109,17 +96,6 @@ namespace randr_util {
 
         auto name_iter = info.name();
         string name{name_iter.begin(), name_iter.end()};
-
-#if WITH_XRANDR_MONITORS
-        if (check_monitor_support()) {
-          auto mon = std::find_if(
-              monitors.begin(), monitors.end(), [&name](const monitor_t& mon) { return mon->name == name; });
-          if (mon != monitors.end()) {
-            (*mon)->output = output;
-            continue;
-          }
-        }
-#endif
 
         auto crtc = conn.get_crtc_info(info->crtc);
         monitors.emplace_back(make_monitor(output, move(name), crtc->width, crtc->height, crtc->x, crtc->y));
